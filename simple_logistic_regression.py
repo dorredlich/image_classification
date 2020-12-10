@@ -61,7 +61,7 @@ def train_result():
     print("sum: ", sumCats)
     print("Prediction in train that it is cat on cats pictures: ", sumCats / TOTAL_CATS_TRAIN)
     cat_error = 1 - sumCats / TOTAL_CATS_TRAIN
-    print("error cat: ",cat_error)
+    print("error cat: ", cat_error)
 
     sumDog = 0
     for dog in data_dog_train:
