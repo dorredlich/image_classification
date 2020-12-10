@@ -11,26 +11,22 @@ TOTAL_DOGS_TEST = 159
 TOTAL_CATS_TEST = 149
 
 
-
-def logistic_fun(z):
-    return 1 / (1.0 + np.exp(-z))
-
-
-def preparing_data_x_from_trainSet():
+def preparing_data_from_trainSet():
     train_dogs = glob.glob("dogs vs cats/training_set/dogs/*.jpg")
     train_cats = glob.glob("dogs vs cats/training_set/cats/*.jpg")
     dogs_x1 = np.array([[np.array(cv2.cvtColor(cv2.imread(dogs), cv2.COLOR_RGB2GRAY))] for dogs in train_dogs])
     cats_x2 = np.array([[np.array(cv2.cvtColor(cv2.imread(cats), cv2.COLOR_RGB2GRAY))] for cats in train_cats])
 
-    dogs_x1_flatten = np.array([np.array(mat.ravel()) for mat in dogs_x1])
-    cats_x2_flatten = np.array([np.array(mat.ravel()) for mat in cats_x2])
+    dogs_x1_train = np.array([np.array(mat.ravel()) for mat in dogs_x1])
+    cats_x2_train = np.array([np.array(mat.ravel()) for mat in cats_x2])
 
-    dogs_x1_flatten = np.array([a / 255. for a in dogs_x1_flatten])
-    cats_x2_flatten = np.array([a / 255. for a in cats_x2_flatten])
+    dogs_x1_train = np.array([a / 255. for a in dogs_x1_train])
+    cats_x2_train = np.array([a / 255. for a in cats_x2_train])
 
-    data_x_tr = np.concatenate([dogs_x1_flatten, cats_x2_flatten])
+    data_x_tr = np.concatenate([dogs_x1_train, cats_x2_train])
 
-    return data_x_tr, dogs_x1_flatten, cats_x2_flatten
+    return data_x_tr, dogs_x1_train, cats_x2_train
+
 
 # making label dog and cat as binary array
 def making_label_y():
@@ -39,8 +35,9 @@ def making_label_y():
     label_y = np.concatenate([dogs, cats]) # merge together in same array
     return label_y
 
-def training_print():
-    cat_prediction = np.average(y.eval(session=sess, feed_dict = 	{x :data_cat_train}))
+
+def train_result():
+    cat_prediction = np.average(y.eval(session=sess, feed_dict = {x :data_cat_train}))
     print("Prediction train cat image: ", cat_prediction)
     train_error_cat = 1 - cat_prediction
 
@@ -51,14 +48,27 @@ def training_print():
     print("Train error: ", total_train_error)
 
 
+def preparing_data_testSet():
+    test_dogs = glob.glob("dogs vs cats/test_set/dogs/*.jpg")
+    test_cats = glob.glob("dogs vs cats/test_set/cats/*.jpg")
+    data_test_dogs = np.array([[np.array(cv2.cvtColor(cv2.imread(dog), cv2.COLOR_RGB2GRAY))] for dog in test_dogs])
+    data_test_cats = np.array([[np.array(cv2.cvtColor(cv2.imread(cat), cv2.COLOR_RGB2GRAY))] for cat in test_cats])
 
-def test_print():
+    data_test_dogs_flat = np.array([np.array(mat.ravel()) for mat in data_test_dogs])
+    data_test_cats_flat = np.array([np.array(mat.ravel()) for mat in data_test_cats])
+
+    data_test_dogs_flat = np.array([x / 255. for x in data_test_dogs_flat])
+    data_test_cats_flat = np.array([x / 255. for x in data_test_cats_flat])
+    return data_test_dogs_flat,data_test_cats_flat
+
+
+def test_result():
     (classify_dogRight, classify_dogWrong, classify_catRight, classify_catWrong) = (0,0,0,0)
     dog_predictions = y.eval(session=sess, feed_dict= {x :data_dog_test})
     #print("dogPredictio: ", dog_predictions)
     for dogPrediction in dog_predictions:
         # There is a 0.5 classification threshold
-        if (dogPrediction < 0.5): # dog classify predicted if probability < 0.5
+        if dogPrediction < 0.5: # dog classify predicted if probability < 0.5
             classify_dogRight += 1
         else:
             classify_catWrong += 1
@@ -69,7 +79,7 @@ def test_print():
     cat_predictions = y.eval(session=sess, feed_dict= {x :data_cat_test})
     #print("catPredictio: ", cat_predictions)
     for catPrediction in cat_predictions:
-        if (catPrediction > 0.5): # cat classify predicted if probability > 0.5
+        if catPrediction > 0.5: # cat classify predicted if probability > 0.5
             classify_catRight += 1
         else:
             classify_dogWrong += 1
@@ -88,22 +98,8 @@ def test_print():
     print("Precision: %.4f" % precision)
 
 
-def preparing_data_testSet():
-    test_dogs = glob.glob("dogs vs cats/test_set/dogs/*.jpg")
-    test_cats = glob.glob("dogs vs cats/test_set/cats/*.jpg")
-    data_test_dogs = np.array([[np.array(cv2.cvtColor(cv2.imread(dog), cv2.COLOR_RGB2GRAY))] for dog in test_dogs])
-    data_test_cats = np.array([[np.array(cv2.cvtColor(cv2.imread(cat), cv2.COLOR_RGB2GRAY))] for cat in test_cats])
-
-    data_test_dogs_flat = np.array([np.array(mat.ravel()) for mat in data_test_dogs])
-    data_test_cats_flat = np.array([np.array(mat.ravel()) for mat in data_test_cats])
-
-    data_test_dogs_flat = np.array([x / 255. for x in data_test_dogs_flat])
-    data_test_cats_flat = np.array([x / 255. for x in data_test_cats_flat])
-    return data_test_dogs_flat,data_test_cats_flat
-
-
 (hidden1_size, hidden2_size) = (100, 50)
-features = TOTAL_PIXELS_PIC  # number of pixels in each pic 256X256
+features = TOTAL_PIXELS_PIC  # number of pixels in each picture 256X256
 eps = 1e-12
 x = tf.compat.v1.placeholder(tf.float32, [None, features])
 y_ = tf.compat.v1.placeholder(tf.float32, [None, 1])
@@ -122,7 +118,8 @@ y = 1 / (1.0 + tf.exp(-z3))
 loss1 = -(y_ * tf.math.log(y + eps) + (1 - y_) * tf.math.log(1 - y + eps))
 loss = tf.reduce_mean(loss1)
 update = tf.compat.v1.train.GradientDescentOptimizer(0.00001).minimize(loss)
-(data_x,data_dog_train, data_cat_train) = preparing_data_x_from_trainSet()
+
+(data_x,data_dog_train, data_cat_train) = preparing_data_from_trainSet()
 label = making_label_y()
 sess = tf.compat.v1.Session()
 sess.run(tf.compat.v1.global_variables_initializer())
@@ -130,11 +127,11 @@ for i in range(0, 10):
     sess.run(update, feed_dict={x: data_x, y_: label})
 
 
-training_print()
+train_result()
 
 (data_dog_test, data_cat_test) = preparing_data_testSet()
 
-test_print()
+test_result()
 
 
 

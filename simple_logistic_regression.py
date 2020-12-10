@@ -11,12 +11,11 @@ TOTAL_DOGS_TEST = 159
 TOTAL_CATS_TEST = 149
 
 
-
 def logistic_fun(z):
     return 1 / (1.0 + np.exp(-z))
 
 
-def preparing_data_x_from_trainSet():
+def preparing_data_from_trainSet():
     train_dogs = glob.glob("dogs vs cats/training_set/dogs/*.jpg")
     train_cats = glob.glob("dogs vs cats/training_set/cats/*.jpg")
     dogs_x1 = np.array([[np.array(cv2.cvtColor(cv2.imread(dogs), cv2.COLOR_RGB2GRAY))] for dogs in train_dogs])
@@ -32,6 +31,7 @@ def preparing_data_x_from_trainSet():
 
     return data_x_tr, dogs_x1_flatten, cats_x2_flatten
 
+
 # making label dog and cat as binary array
 def making_label_y():
     dogs = np.array([[1] for x in range(TOTAL_DOGS_TRAIN)])  # making every dog picture the number 1 in array
@@ -39,48 +39,100 @@ def making_label_y():
     label_y = np.concatenate([dogs, cats]) # merge together in same array
     return label_y
 
-def training_print():
-    cat_prediction = np.average(y.eval(session=sess, feed_dict = 	{x :data_cat_train}))
-    print("Prediction train cat image: ", cat_prediction)
-    train_error_cat = 1 - cat_prediction
 
-    dog_prediction = np.average(y.eval(session=sess, feed_dict= {x :data_dog_train}))
-    print("Prediction train dog image: ", dog_prediction)
-    train_error_dog = dog_prediction
-    total_train_error = (train_error_cat + train_error_dog) / 2.
-    print("Train error: ", total_train_error)
+def preparing_data_testSet():
+    test_dogs = glob.glob("dogs vs cats/test_set/dogs/*.jpg")
+    test_cats = glob.glob("dogs vs cats/test_set/cats/*.jpg")
+    data_test_dogs = np.array([[np.array(cv2.cvtColor(cv2.imread(dog), cv2.COLOR_RGB2GRAY))] for dog in test_dogs])
+    data_test_cats = np.array([[np.array(cv2.cvtColor(cv2.imread(cat), cv2.COLOR_RGB2GRAY))] for cat in test_cats])
 
+    data_test_dogs_flat = np.array([np.array(mat.ravel()) for mat in data_test_dogs])
+    data_test_cats_flat = np.array([np.array(mat.ravel()) for mat in data_test_cats])
 
-
-
-
+    data_test_dogs_flat = np.array([x / 255. for x in data_test_dogs_flat])
+    data_test_cats_flat = np.array([x / 255. for x in data_test_cats_flat])
+    return data_test_dogs_flat,data_test_cats_flat
 
 
+def train_result():
+    sumCats = 0
+    for cat in data_cat_train:
+        sumCats += logistic_fun(np.matmul(np.array([cat]), sess.run(W)) + sess.run(b))[0][0]
+    print("sum: ", sumCats)
+    print("Prediction in train that it is cat on cats pictures: ", sumCats / TOTAL_CATS_TRAIN)
+    cat_error = 1 - sumCats / TOTAL_CATS_TRAIN
+    print("error cat: ",cat_error)
+
+    sumDog = 0
+    for dog in data_dog_train:
+        sumDog += logistic_fun(np.matmul(np.array([dog]), sess.run(W)) + sess.run(b))[0][0]
+
+    print("Prediction in train that it is dog on dogs pictures: ", sumDog / TOTAL_DOGS_TRAIN)
+    dog_error = sumDog / TOTAL_DOGS_TRAIN
+    total_train_error = (dog_error + cat_error) / 2.
+    print("Total Train Error: ", total_train_error)
 
 
+def test_result():
+    (classify_dogRight, classify_dogWrong, classify_catRight, classify_catWrong) = (0, 0, 0, 0)
+    (sumDog, sumCat) = (0, 0)
+    for dog in data_dog_test:
+        dogPrediction = logistic_fun(np.matmul(np.array([dog]), sess.run(W)) + sess.run(b))[0][0]
+        sumDog += dogPrediction
+        # There is a 0.5 classification threshold
+        if dogPrediction < 0.5:  # dog classify predicted if probability < 0.5
+            classify_dogRight += 1
+        else:
+            classify_catWrong += 1
+    dog_testPrediction = sumDog / TOTAL_DOGS_TEST
+    print("Prediction in test that it is dog on dogs pictures: ", dog_testPrediction)
+    dog_test_error = dog_testPrediction
+
+    for cat in data_cat_test:
+        catPrediction = logistic_fun(np.matmul(np.array([cat]), sess.run(W)) + sess.run(b))[0][0]
+        sumCat += catPrediction
+        if catPrediction > 0.5:  # cat classify predicted if probability > 0.5
+            classify_catRight += 1
+        else:
+            classify_dogWrong += 1
+    cat_testPrediction = sumCat / TOTAL_CATS_TEST
+    print("Prediction in test that it is cat on cats pictures: ", cat_testPrediction)
+    cat_test_error = 1 - cat_testPrediction
+
+    accuracy = (classify_catRight + classify_dogRight) / (TOTAL_CATS_TEST + TOTAL_CATS_TEST)  # how often the classify is correct
+    recall = classify_catRight / TOTAL_CATS_TEST
+    precision = classify_catRight / (classify_catRight + classify_catWrong)
+    test_error = (1 - dog_test_error + cat_test_error) / 2.  # how often the classify is incorrect
+    print("classify_dogRight: ", classify_dogRight)
+    print("classify_dogWrong: ", classify_dogWrong)
+    print("classify_catRight: ", classify_catRight)
+    print("classify_catWrong: ", classify_catWrong)
+    print("Test Error: %.4f\n" % test_error)
+    print("Accuracy: %.4f" % accuracy)
+    print("Recall: %.4f" % recall)
+    print("Precision: %.4f" % precision)
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-    
-
-
+features = TOTAL_PIXELS_PIC  # number of pixels in each pic
+eps = 1e-12
+x = tf.compat.v1.placeholder(tf.float32, [None, features])
+y_ = tf.compat.v1.placeholder(tf.float32, [None, 1])
+W = tf.Variable(tf.zeros([features, 1]))
+b = tf.Variable(tf.zeros([1]))
+y = 1 / (1.0 + tf.exp(-(tf.matmul(x, W) + b)))
 loss1 = -(y_ * tf.math.log(y + eps) + (1 - y_) * tf.math.log(1 - y + eps))
 loss = tf.reduce_mean(loss1)
 update = tf.compat.v1.train.GradientDescentOptimizer(0.00001).minimize(loss)
-(data_x,data_dog_train, data_cat_train) = preparing_data_x_from_trainSet()
+
+(data_x,data_dog_train, data_cat_train) = preparing_data_from_trainSet()
 label = making_label_y()
 sess = tf.compat.v1.Session()
 sess.run(tf.compat.v1.global_variables_initializer())
 for i in range(0, 10):
     sess.run(update, feed_dict={x: data_x, y_: label})
+
+train_result()
+
+(data_dog_test, data_cat_test) = preparing_data_testSet()
+
+test_result()
