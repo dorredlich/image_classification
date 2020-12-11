@@ -45,6 +45,7 @@ def train_result():
     print("Prediction train dog image: ", dog_prediction)
     train_error_dog = dog_prediction
     total_train_error = (train_error_cat + train_error_dog) / 2.
+
     print("Train error: ", total_train_error)
 
 
