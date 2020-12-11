@@ -24,7 +24,6 @@ def preparing_data_from_trainSet():
     cats_x2_train = np.array([a / 255. for a in cats_x2_train])
 
     data_x_tr = np.concatenate([dogs_x1_train, cats_x2_train])
-
     return data_x_tr, dogs_x1_train, cats_x2_train
 
 
