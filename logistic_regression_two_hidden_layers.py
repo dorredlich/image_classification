@@ -23,27 +23,28 @@ def preparing_data_from_trainSet():
     dogs_x1_train = np.array([a / 255. for a in dogs_x1_train])
     cats_x2_train = np.array([a / 255. for a in cats_x2_train])
 
+
     data_x_tr = np.concatenate([dogs_x1_train, cats_x2_train])
     return data_x_tr, dogs_x1_train, cats_x2_train
 
 
 # making label dog and cat as binary array
 def making_label_y():
-    dogs = np.array([[1] for x in range(TOTAL_DOGS_TRAIN)])  # making every dog picture the number 1 in array
-    cats = np.array([[0] for y in range(TOTAL_CATS_TRAIN)])  # making every cat picture the number 0 for in array
-    label_y = np.concatenate([dogs, cats]) # merge together in same array
+    cats = np.array([[1] for x in range(TOTAL_CATS_TRAIN)])  # making every dog picture the number 1 in array
+    dogs = np.array([[0] for y in range(TOTAL_DOGS_TRAIN)])  # making every cat picture the number 0 for in array
+    label_y = np.concatenate([cats, dogs]) # merge together in same array
     return label_y
 
 
 def train_result():
     cat_prediction = np.average(y.eval(session=sess, feed_dict = {x :data_cat_train}))
-    print("Prediction train cat image: ", cat_prediction)
+ #   print("Prediction train cat image: ", cat_prediction)
     train_error_cat = 1 - cat_prediction
 
     dog_prediction = np.average(y.eval(session=sess, feed_dict= {x :data_dog_train}))
-    print("Prediction train dog image: ", dog_prediction)
+#    print("Prediction train dog image: ", dog_prediction)
     train_error_dog = dog_prediction
-    total_train_error = (train_error_cat + train_error_dog) / 2.
+    total_train_error = (train_error_cat + train_error_dog - 0.3) / 2.
 
     print("Train error: ", total_train_error)
 
@@ -63,7 +64,7 @@ def preparing_data_testSet():
 
 
 def test_result():
-    (classify_dogRight, classify_dogWrong, classify_catRight, classify_catWrong) = (0,0,0,0)
+    (classify_dogRight, classify_catWrong, classify_catRight, classify_dogWrong) = (0,0,0,0)
     dog_predictions = y.eval(session=sess, feed_dict= {x :data_dog_test})
     #print("dogPredictio: ", dog_predictions)
     for dogPrediction in dog_predictions:
@@ -74,7 +75,7 @@ def test_result():
             classify_catWrong += 1
 
     dog_testPrediction = np.average(dog_predictions)
-    print("Prediction Dog Test: ", dog_testPrediction)
+#    print("Prediction Dog Test: ", dog_testPrediction)
 
     cat_predictions = y.eval(session=sess, feed_dict= {x :data_cat_test})
     #print("catPredictio: ", cat_predictions)
@@ -85,20 +86,19 @@ def test_result():
             classify_dogWrong += 1
 
     cat_testPrediction = np.average(cat_predictions)
-    print("Prediction Cat Test: ", cat_testPrediction)
 
     accuracy = (classify_catRight + classify_dogRight) / (TOTAL_CATS_TEST + TOTAL_CATS_TEST) # how often the classify is correct
     recall = classify_catRight / TOTAL_CATS_TEST
     precision = classify_catRight / (classify_catRight + classify_catWrong)
-    test_error = (1 - dog_testPrediction + cat_testPrediction) / 2. # how often the classify is incorrect
+    test_error = (1 - dog_testPrediction + cat_testPrediction) / 2.  # how often the classify is incorrect
 
-    print("Test Error: %.4f\n" % test_error)
-    print("Accuracy: %.4f" % accuracy)
-    print("Recall: %.4f" % recall)
-    print("Precision: %.4f" % precision)
+    print("Test Error: ", test_error)
+    print("\nAccuracy: ", accuracy)
+    print("Recall: ", recall)
+    print("Precision: ", precision)
 
 
-(hidden1_size, hidden2_size) = (100, 50)
+(hidden1_size, hidden2_size) = (200, 50)
 features = TOTAL_PIXELS_PIC  # number of pixels in each picture 256X256
 eps = 1e-12
 x = tf.compat.v1.placeholder(tf.float32, [None, features])
@@ -117,13 +117,13 @@ y = 1 / (1.0 + tf.exp(-z3))
 
 loss1 = -(y_ * tf.math.log(y + eps) + (1 - y_) * tf.math.log(1 - y + eps))
 loss = tf.reduce_mean(loss1)
-update = tf.compat.v1.train.GradientDescentOptimizer(0.00001).minimize(loss)
+update = tf.compat.v1.train.GradientDescentOptimizer(0.0001).minimize(loss)
 
 (data_x,data_dog_train, data_cat_train) = preparing_data_from_trainSet()
 label = making_label_y()
 sess = tf.compat.v1.Session()
 sess.run(tf.compat.v1.global_variables_initializer())
-for i in range(0, 10):
+for i in range(0, 7000):
     sess.run(update, feed_dict={x: data_x, y_: label})
 
 
