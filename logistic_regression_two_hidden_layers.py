@@ -38,13 +38,11 @@ def making_label_y():
 
 def train_result():
     cat_prediction = np.average(y.eval(session=sess, feed_dict = {x :data_cat_train}))
- #   print("Prediction train cat image: ", cat_prediction)
     train_error_cat = 1 - cat_prediction
 
     dog_prediction = np.average(y.eval(session=sess, feed_dict= {x :data_dog_train}))
-#    print("Prediction train dog image: ", dog_prediction)
     train_error_dog = dog_prediction
-    total_train_error = (train_error_cat + train_error_dog - 0.3) / 2.
+    total_train_error = (train_error_cat + train_error_dog) / 2.
 
     print("Train error: ", total_train_error)
 
@@ -66,7 +64,6 @@ def preparing_data_testSet():
 def test_result():
     (classify_dogRight, classify_catWrong, classify_catRight, classify_dogWrong) = (0,0,0,0)
     dog_predictions = y.eval(session=sess, feed_dict= {x :data_dog_test})
-    #print("dogPredictio: ", dog_predictions)
     for dogPrediction in dog_predictions:
         # There is a 0.5 classification threshold
         if dogPrediction < 0.5: # dog classify predicted if probability < 0.5
@@ -75,10 +72,8 @@ def test_result():
             classify_catWrong += 1
 
     dog_testPrediction = np.average(dog_predictions)
-#    print("Prediction Dog Test: ", dog_testPrediction)
 
     cat_predictions = y.eval(session=sess, feed_dict= {x :data_cat_test})
-    #print("catPredictio: ", cat_predictions)
     for catPrediction in cat_predictions:
         if catPrediction > 0.5: # cat classify predicted if probability > 0.5
             classify_catRight += 1
