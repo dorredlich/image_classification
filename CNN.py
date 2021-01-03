@@ -78,9 +78,9 @@ batch_size = 32
 IMG_SIZE = 150
 
 
-train_path = 'dogs vs cats/training_set/'
-validation_path = 'dogs vs cats/validation_set/'
-test_path = 'dogs vs cats/test_set/'
+train_path = 'dogs vs cats-for CNN/train_set/'
+validation_path = 'dogs vs cats-for CNN/validation_set/'
+test_path = 'dogs vs cats-for CNN/test_set/'
 
 
 def run_test_harness():
