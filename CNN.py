@@ -73,7 +73,7 @@ def plotAccuracyLossForTestAndTrain(model_fit_history):
     plt.show()
 
 
-epochs = 50
+epochs = 45
 batch_size = 32
 IMG_SIZE = 150
 
