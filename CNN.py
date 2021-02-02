@@ -17,7 +17,6 @@ def define_model():
     model.add(Dropout(0.2))
     model.add(Conv2D(64, (3, 3), activation='relu', padding='same'))
     model.add(MaxPooling2D((2, 2)))
-    model.add(Dropout(0.2))
     model.add(Conv2D(128, (3, 3), activation='relu', padding='same'))
     model.add(MaxPooling2D((2, 2)))
     model.add(Dropout(0.2))
